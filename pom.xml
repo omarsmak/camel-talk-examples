@@ -24,6 +24,7 @@
         <maven-project-info-reports-plugin-version>3.0.0</maven-project-info-reports-plugin-version>
         <maven-assembly-plugin-version>3.3.0</maven-assembly-plugin-version>
         <log4j2-version>2.13.3</log4j2-version>
+        <spring-boot-version>2.3.0.RELEASE</spring-boot-version>
     </properties>
 
     <repositories>
@@ -115,7 +116,8 @@
     </build>
 
     <modules>
-        <module>timer-main</module>
+        <module>camel-main-timer</module>
+        <module>camel-springboot-timer</module>
     </modules>
 
 </project>
