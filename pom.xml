@@ -137,6 +137,7 @@
         <module>camel-main-timer</module>
         <module>camel-springboot-timer</module>
         <module>camel-quarkus-timer</module>
+        <module>camel-quarkus-rest</module>
     </modules>
 
 </project>

@@ -1,0 +1,16 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: camel-quarkus-rest
+  namespace: default
+spec:
+  template:
+    metadata:
+      name: camel-quarkus-rest-v1
+    spec:
+      containers:
+        - image: docker.io/{USERNAME}/camel-quarkus-rest
+  traffic:
+    - tag: latest
+      latestRevision: true
+      percent: 100
