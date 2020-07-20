@@ -12,8 +12,8 @@
 
     <properties>
         <jdk.version>1.8</jdk.version>
-        <camel.version>3.4.0-SNAPSHOT</camel.version>
-        <camel.quarkus.version>1.1.0-SNAPSHOT</camel.quarkus.version>
+        <camel.version>3.4.1</camel.version>
+        <camel.quarkus.version>1.1.0-CR3</camel.quarkus.version>
         <maven.clean.plugin>3.1.0</maven.clean.plugin>
         <maven.resource.plugin>3.0.2</maven.resource.plugin>
         <maven-compiler-plugin-version>3.8.1</maven-compiler-plugin-version>
