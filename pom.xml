@@ -12,8 +12,8 @@
 
     <properties>
         <jdk.version>1.8</jdk.version>
-        <camel.version>3.4.1</camel.version>
-        <camel.quarkus.version>1.1.0-CR3</camel.quarkus.version>
+        <camel.version>3.5.0</camel.version>
+        <camel.quarkus.version>1.0.1</camel.quarkus.version>
         <maven.clean.plugin>3.1.0</maven.clean.plugin>
         <maven.resource.plugin>3.0.2</maven.resource.plugin>
         <maven-compiler-plugin-version>3.8.1</maven-compiler-plugin-version>
@@ -26,8 +26,8 @@
         <maven-assembly-plugin-version>3.3.0</maven-assembly-plugin-version>
         <maven-exec-maven-plugin-version>3.0.0</maven-exec-maven-plugin-version>
         <log4j2-version>2.13.3</log4j2-version>
-        <spring-boot-version>2.3.0.RELEASE</spring-boot-version>
-        <quarkus.version>1.4.2.Final</quarkus.version>
+        <spring-boot-version>2.3.3.RELEASE</spring-boot-version>
+        <quarkus.version>1.7.1.Final</quarkus.version>
     </properties>
 
     <repositories>
