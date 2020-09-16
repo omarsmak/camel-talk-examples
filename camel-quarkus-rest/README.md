@@ -23,6 +23,16 @@ To run the native compiled route:
 ./target/camel-quarkus-rest-1.0-SNAPSHOT-runner 
 ```
 
+To build a docker image with native binaries, just run:
+```
+docker build -f Dockerfile.multistage -t camel-quarkus-rest-native .   
+```
+
+And run it with this command:
+```
+docker run -i --rm -p 8080:8080 camel-quarkus-rest-native
+```
+
 ## Deploy to Knative
 In this example, we will deploy our application to Knative cluster on K8s. We will need to follow these steps:
 
