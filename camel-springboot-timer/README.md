@@ -3,7 +3,7 @@ This example utlizes [Camel SpringBoot](https://github.com/apache/camel-spring-b
 
 To build
 ```
- ../mvnw clean package
+ ../mvnw clean install
 ```
 
 To run it directly:

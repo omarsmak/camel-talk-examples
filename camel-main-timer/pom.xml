@@ -2,13 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <artifactId>examples</artifactId>
-        <groupId>com.omarsmak.camel.examples</groupId>
-        <version>1.0-SNAPSHOT</version>
-    </parent>
 
     <artifactId>camel-main-timer</artifactId>
+    <groupId>com.omarsmak.camel.examples</groupId>
     <version>1.0-SNAPSHOT</version>
 
     <name>Camel Examples :: Camel Main Timer</name>
@@ -17,6 +13,15 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <target.main.class>com.omarsmak.camel.examples.camel.main.timer.CamelRoute</target.main.class>
+
+        <jdk.version>1.8</jdk.version>
+        <camel.version>3.5.0</camel.version>
+        <maven-compiler-plugin-version>3.8.1</maven-compiler-plugin-version>
+        <maven-surefire-plugin-version>3.0.0-M4</maven-surefire-plugin-version>
+        <maven-jar-plugin-version>3.0.2</maven-jar-plugin-version>
+        <maven-assembly-plugin-version>3.3.0</maven-assembly-plugin-version>
+        <maven-exec-maven-plugin-version>3.0.0</maven-exec-maven-plugin-version>
+        <log4j2-version>2.13.3</log4j2-version>
     </properties>
 
     <dependencyManagement>
@@ -74,6 +79,23 @@
     <build>
         <plugins>
             <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin-version}</version>
+                <configuration>
+                    <source>${jdk.version}</source>
+                    <target>${jdk.version}</target>
+                    <maxmem>512M</maxmem>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin-version}</version>
+            </plugin>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven-jar-plugin-version}</version>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
             </plugin>
@@ -83,5 +105,45 @@
                 <artifactId>exec-maven-plugin</artifactId>
             </plugin>
         </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>${maven-assembly-plugin-version}</version>
+
+                    <configuration>
+                        <descriptorRefs>
+                            <descriptorRef>jar-with-dependencies</descriptorRef>
+                        </descriptorRefs>
+                        <archive>
+                            <manifest>
+                                <mainClass>${target.main.class}</mainClass>
+                            </manifest>
+                        </archive>
+                    </configuration>
+
+                    <executions>
+                        <execution>
+                            <id>make-assembly</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>single</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <!-- Allows the example to be run via 'mvn compile exec:java' -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>${maven-exec-maven-plugin-version}</version>
+                    <configuration>
+                        <mainClass>${target.main.class}</mainClass>
+                        <includePluginDependencies>false</includePluginDependencies>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 </project>
