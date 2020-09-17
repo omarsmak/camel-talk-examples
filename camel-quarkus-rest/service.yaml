@@ -9,7 +9,7 @@ spec:
       name: camel-quarkus-rest-v1
     spec:
       containers:
-        - image: docker.io/{USERNAME}/camel-quarkus-rest
+        - image: __IMAGE__
   traffic:
     - tag: latest
       latestRevision: true

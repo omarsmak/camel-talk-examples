@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1alpha1
+kind: TaskRun
+metadata:
+  name: camel-quarkus-rest-run-6
+  namespace: ci-pipeline
+spec:
+  serviceAccountName: tekton-sa
+  taskRef:
+    name: camel-quarkus-rest-task
+  inputs:
+    resources:
+      - name: git-source-camel-talk
+        resourceRef:
+          name: git-source-camel-talk
+    params:
+      - name: pathToDockerFile
+        value: Dockerfile.multistage
+      - name: pathToContext
+        value: /workspace/git-source-camel-talk/camel-quarkus-rest
+      - name: imageUrl
+        value: index.docker.io/omarsmak/camel-quarkus-rest
+      - name: pathToYamlFile
+        value: /workspace/git-source-camel-talk/camel-quarkus-rest/service.yaml

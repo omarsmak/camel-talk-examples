@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: basic-user-pass-docker
+  namespace: ci-pipeline
+  annotations:
+    tekton.dev/docker-0: https://index.docker.io # Described below
+type: kubernetes.io/basic-auth
+stringData:
+  username: {YOUR_DOCKER_USERNAME}
+  password: {YOUR_DOCKER_PASSWORD}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tekton-sa
+  namespace: ci-pipeline
+secrets:
+  - name: basic-user-pass-docker
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: job-master
+rules:
+  - apiGroups:
+      - serving.knative.dev
+    resources:
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: job-master-1
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: job-master
+subjects:
+  - kind: ServiceAccount
+    name: tekton-sa
+    namespace: ci-pipeline
