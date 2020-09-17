@@ -9,7 +9,7 @@ public class CamelRoute extends EndpointRouteBuilder {
                 .get("/hello?q={text}")
                 .produces("text/plain")
                 .route()
-                .setBody(simple("Text is: ${headers.q}"))
+                .setBody(simple("My Awesome Text is: ${headers.q}"))
                 .endRest();
     }
 }
