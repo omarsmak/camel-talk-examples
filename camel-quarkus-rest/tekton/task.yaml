@@ -2,7 +2,7 @@
 apiVersion: tekton.dev/v1alpha1
 kind: PipelineResource
 metadata:
-  name: git-source-camel-talk
+  name: git-source
   namespace: ci-pipeline
 spec:
   type: git
@@ -33,7 +33,7 @@ metadata:
 spec:
   inputs:
     resources:
-      - name: git-source-camel-talk
+      - name: git-source
         type: git
     params:
       - name: pathToDockerFile
@@ -54,18 +54,18 @@ spec:
       - name: pathToYamlFile
         description: The path to the yaml file to deploy within the git source
   steps:
-#    - name: build-and-push
-#      image: gcr.io/kaniko-project/executor:v0.15.0
-#      # specifying DOCKER_CONFIG is required to allow kaniko to detect docker credential
-#      env:
-#        - name: "DOCKER_CONFIG"
-#          value: "/tekton/home/.docker/"
-#      command:
-#        - /kaniko/executor
-#      args:
-#        - --dockerfile=$(inputs.params.pathToDockerFile)
-#        - --destination=$(inputs.params.imageUrl):$(inputs.params.imageTag)
-#        - --context=$(inputs.params.pathToContext)
+    - name: build-and-push
+      image: gcr.io/kaniko-project/executor:v0.15.0
+      # specifying DOCKER_CONFIG is required to allow kaniko to detect docker credential
+      env:
+        - name: "DOCKER_CONFIG"
+          value: "/tekton/home/.docker/"
+      command:
+        - /kaniko/executor
+      args:
+        - --dockerfile=$(inputs.params.pathToDockerFile)
+        - --destination=$(inputs.params.imageUrl):$(inputs.params.imageTag)
+        - --context=$(inputs.params.pathToContext)
     - name: deploy
       image: alpine
       command: ["sed"]
