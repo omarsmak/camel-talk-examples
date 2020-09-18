@@ -1,0 +1,120 @@
+# Here we set a minimal service account that is responsible for the event listener
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tekton-triggers-http-minimal-sa
+  namespace: ci-pipeline
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: tekton-triggers-http-minimal
+  namespace: ci-pipeline
+rules:
+  # Permissions for every EventListener deployment to function
+  - apiGroups: ["triggers.tekton.dev"]
+    resources: ["eventlisteners", "triggerbindings", "triggertemplates"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    # secrets are only needed for Github/Gitlab interceptors, serviceaccounts only for per trigger authorization
+    resources: ["configmaps", "secrets", "serviceaccounts"]
+    verbs: ["get", "list", "watch"]
+  # Permissions to create resources in associated TriggerTemplates
+  - apiGroups: ["tekton.dev"]
+    resources: ["pipelineruns", "pipelineresources", "taskruns"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tekton-triggers-http-binding
+  namespace: ci-pipeline
+subjects:
+  - kind: ServiceAccount
+    name: tekton-triggers-http-minimal-sa
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tekton-triggers-http-minimal
+---
+# TriggerTemplate is basically very similar to Pipeline, you will notice we are just basically copying most things from Pipeline
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: camel-quarkus-rest-trigger-template
+  namespace: ci-pipeline
+spec:
+  params:
+    - name: pathToDockerFile
+      description: The path to the dockerfile to build
+      default: /workspace/docker-source/Dockerfile
+    - name: pathToContext
+      description:
+        The build context used by Kaniko
+        (https://github.com/GoogleContainerTools/kaniko#kaniko-build-contexts)
+      default: /workspace/docker-source
+    - name: pathToYamlFile
+      description: The path to the yaml file to deploy within the git source
+    - name: imageUrl
+      description: Url of image repository
+    - name: imageTag
+      description: Tag to apply to the built image
+      default: "latest"
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: camel-quarkus-rest-build-
+        namespace: ci-pipeline
+      spec:
+        serviceAccountName: tekton-sa
+        pipelineRef:
+          name: camel-quarkus-rest-build-deploy-pipeline
+        params:
+          - name: pathToDockerFile
+            value: $(tt.params.pathToDockerFile)
+          - name: pathToContext
+            value: $(tt.params.pathToContext)
+          - name: pathToYamlFile
+            value: $(tt.params.pathToYamlFile)
+          - name: imageUrl
+            value: $(tt.params.imageUrl)
+          - name: imageTag
+            value: $(tt.params.imageTag)
+        resources:
+          - name: git-source
+            resourceRef:
+              name: git-source
+---
+# TriggerBinding you can think of it similar PipelineRun where it is reasonable to feed TriggerTemplate with input parameters
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: camel-quarkus-rest-trigger-binding
+  namespace: ci-pipeline
+spec:
+  params:
+    - name: pathToDockerFile
+      value: Dockerfile.multistage
+    - name: pathToContext
+      value: /workspace/git-source/camel-quarkus-rest
+    - name: imageUrl
+      value: index.docker.io/{DOCKER_USERNAME}/camel-quarkus-rest
+    - name: pathToYamlFile
+      value: /workspace/git-source/camel-quarkus-rest/service.yaml
+---
+# Our EventListener is basically an HTTP sink that is responsible for listening to the event on the HTTP URL and trigger a TriggerBinding/TriggerTemplate. You can get cluster link for the
+# eventListener via the command `tkn eventlistener describe camel-quarkus-rest-trigger-event-listener -n ci-pipeline`
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: camel-quarkus-rest-trigger-event-listener
+  namespace: ci-pipeline
+spec:
+  serviceAccountName: tekton-triggers-http-minimal-sa
+  triggers:
+    - name: camel-quarkus-rest-trigger
+      bindings:
+        - ref: camel-quarkus-rest-trigger-binding
+      template:
+        name: camel-quarkus-rest-trigger-template

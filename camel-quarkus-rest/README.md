@@ -68,14 +68,28 @@ To do this, we need to follow these steps:
 kubectl apply -f tekton/namespace.yaml
 ` 
 1. In `tekton/account.yaml`, replace both `{YOUR_DOCKER_USERNAME}` and `{YOUR_DOCKER_PASSWORD}` with your Docker credentials and run the command `kubectl apply -f tekton/account.yaml`. This will create a ServiceAccount with limited permissions ClusterRole, **hence if you concern about the assigned roles, you may need to change that.**
-1. Run `kubectl apply -f tekton/task.yaml`. This file contains our Task blueprint and the steps on how our task will run later.
-1. In `tekton/taskrun.yaml`, change `{DOCKER_USERNAME}` with your Docker username and let's run our task using this command `kubectl apply -f tekton/taskrun.yaml`.
-1. To monitor our task, we can run this command `tkn taskrun describe --namespace camel-quarkus-rest-run-1`.
-1. Once the Tekton task has succeeded, our application should be deployed in Knative, we can run this command `kubectl get ksvc` which will show the URLs for your deployed services that you can use to execute the service. The URL will be in this form: 
-```
-http://camel-quarkus-rest.default.example.com
-``` 
-which is this form `{APPLICATION_NAME}.{NAMESPACE}.{CUSTOM_DOMAIN}`, to access it, you will need setup your domain to route all traffic through your ingress Gateway.
+1. Run `kubectl apply -f tekton/pipeline.yaml`. This file contains our pipeline blueprint and the steps on how our pipeline will run later.
+1. In `tekton/pipeline-run.yaml`, replace `{DOCKER_USERNAME}` with your Docker username and let's run our task using this command `kubectl apply -f tekton/pipeline-run.yaml`.
+1. To monitor our task, we can run this command `tkn pipelinerun describe camel-quarkus-rest-build-1 --namespace ci-pipeline`.
+1. Once the Tekton pipeline has succeeded, our application should be deployed in Knative, we can run this command `kubectl get ksvc` which will show the URLs for your deployed services that you can use to execute the service. The URL will be in this form: 
+    ```
+    http://camel-quarkus-rest.default.example.com
+    ``` 
+    which is this form `{APPLICATION_NAME}.{NAMESPACE}.{CUSTOM_DOMAIN}`, to access it, you will need setup your domain to route all traffic through your ingress Gateway.
+
+**Optional:** The example includes a very basic HTTP [Tekton Trigger](https://github.com/tektoncd/triggers) that can be used to trigger the build, the same method can be used to trigger the build from 
+external system, for example Github. To set it up, you will need to do the following steps:
+1. [Install Tekton Triggers](https://github.com/tektoncd/triggers/blob/master/docs/install.md) into your Kubernetes cluster.
+2. In `tekton/trigger.yaml` replace `{DOCKER_USERNAME}` with your Docker username.
+3. Run the command `kubectl apply -f tekton/trigger.yaml`. This will setup few things like `TriggerTemplate`, `TriggerBinding` and `EventListener` for our pipeline in namespace `ci-pipeline`.
+4. In order to trigger the event, we will need to port forward our event listener to port `localhost:8080` through this command:
+    ```
+      kubectl port-forward -n ci-pipeline \
+     "$(kubectl get pod --selector=eventlistener=camel-quarkus-rest-trigger-event-listener -oname --namespace ci-pipeline)" \
+     8080
+    ```
+5. Now we can trigger our even through a cURL request, for example: `curl http://localhost:8080`.
+
 
 To clean up everything:
 1. `kubectl delete kservice camel-quarkus-rest`.

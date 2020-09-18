@@ -1,0 +1,22 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  name: camel-quarkus-rest-build-1
+  namespace: ci-pipeline
+spec:
+  serviceAccountName: tekton-sa
+  pipelineRef:
+    name: camel-quarkus-rest-build-deploy-pipeline
+  resources:
+    - name: git-source
+      resourceRef:
+        name: git-source
+  params:
+    - name: pathToDockerFile
+      value: Dockerfile.multistage
+    - name: pathToContext
+      value: /workspace/git-source/camel-quarkus-rest
+    - name: imageUrl
+      value: index.docker.io/{DOCKER_USERNAME}/camel-quarkus-rest
+    - name: pathToYamlFile
+      value: /workspace/git-source/camel-quarkus-rest/service.yaml

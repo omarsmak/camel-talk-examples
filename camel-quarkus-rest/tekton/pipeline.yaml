@@ -1,0 +1,164 @@
+# Here we specify the input github repo
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: git-source
+  namespace: ci-pipeline
+spec:
+  type: git
+  params:
+    - name: revision
+      value: master
+    - name: url
+      value: https://github.com/omarsmak/camel-talk-examples
+---
+## This is only needed to pump up the repo memory since graalvm native image is very memory intensive
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: limit-mem-cpu-per-container
+  namespace: ci-pipeline
+spec:
+  limits:
+    - max:
+        memory: "6Gi"
+      type: Container
+---
+# This is our task blueporint for building the source code and the docker image using Kaniko
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: camel-quarkus-rest-source-to-image-task
+  namespace: ci-pipeline
+spec:
+  inputs:
+    resources:
+      - name: git-source
+        type: git
+    params:
+      - name: pathToDockerFile
+        type: string
+        description: The path to the dockerfile to build
+        default: /workspace/docker-source/Dockerfile
+      - name: pathToContext
+        type: string
+        description:
+          The build context used by Kaniko
+          (https://github.com/GoogleContainerTools/kaniko#kaniko-build-contexts)
+        default: /workspace/docker-source
+      - name: imageUrl
+        description: Url of image repository
+      - name: imageTag
+        description: Tag to apply to the built image
+        default: "latest"
+  steps:
+    - name: build-and-push
+      image: gcr.io/kaniko-project/executor
+      # specifying DOCKER_CONFIG is required to allow kaniko to detect docker credential
+      env:
+        - name: "DOCKER_CONFIG"
+          value: "/tekton/home/.docker/"
+      command:
+        - /kaniko/executor
+      args:
+        - --dockerfile=$(inputs.params.pathToDockerFile)
+        - --destination=$(inputs.params.imageUrl):$(inputs.params.imageTag)
+        - --context=$(inputs.params.pathToContext)
+---
+# This is our task blueprint task for deployment to knative
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: camel-quarkus-rest-deploy-task
+  namespace: ci-pipeline
+spec:
+  inputs:
+    resources:
+      - name: git-source
+        type: git
+    params:
+      - name: imageUrl
+        description: Url of image repository
+      - name: imageTag
+        description: Tag to apply to the built image
+        default: "latest"
+      - name: pathToYamlFile
+        description: The path to the yaml file to deploy within the git source
+  steps:
+    - name: update-yaml
+      image: alpine
+      command: ["sed"]
+      args:
+        - "-i"
+        - "-e"
+        - "s;__IMAGE__;$(inputs.params.imageUrl):$(inputs.params.imageTag);g"
+        - "$(inputs.params.pathToYamlFile)"
+    - name: run-kubectl
+      image: lachlanevenson/k8s-kubectl
+      command: ["kubectl"]
+      args:
+        - "apply"
+        - "-f"
+        - "$(inputs.params.pathToYamlFile)"
+---
+# This is our Pipeline blueprint, here we glue all ours tasks together into a single pipeline
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: camel-quarkus-rest-build-deploy-pipeline
+  namespace: ci-pipeline
+spec:
+  resources:
+    - name: git-source
+      type: git
+  params:
+    - name: pathToDockerFile
+      type: string
+      description: The path to the dockerfile to build
+      default: /workspace/docker-source/Dockerfile
+    - name: pathToContext
+      type: string
+      description:
+        The build context used by Kaniko
+        (https://github.com/GoogleContainerTools/kaniko#kaniko-build-contexts)
+      default: /workspace/docker-source
+    - name: pathToYamlFile
+      description: The path to the yaml file to deploy within the git source
+    - name: imageUrl
+      description: Url of image repository
+    - name: imageTag
+      description: Tag to apply to the built image
+      default: "latest"
+  tasks:
+    - name: camel-quarkus-rest-source-to-image-task
+      taskRef:
+        name: camel-quarkus-rest-source-to-image-task
+      params:
+        - name: pathToContext
+          value: "$(params.pathToContext)"
+        - name: pathToDockerFile
+          value: "$(params.pathToDockerFile)"
+        - name: imageUrl
+          value: "$(params.imageUrl)"
+        - name: imageTag
+          value: "$(params.imageTag)"
+      resources:
+        inputs:
+          - name: git-source
+            resource: git-source
+    - name: camel-quarkus-rest-deploy-task
+      taskRef:
+        name: camel-quarkus-rest-deploy-task
+      runAfter:
+        - camel-quarkus-rest-source-to-image-task
+      params:
+        - name: pathToYamlFile
+          value:  "$(params.pathToYamlFile)"
+        - name: imageUrl
+          value: "$(params.imageUrl)"
+        - name: imageTag
+          value: "$(params.imageTag)"
+      resources:
+        inputs:
+          - name: git-source
+            resource: git-source
